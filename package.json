@@ -1,0 +1,16 @@
+{
+  "name": "scatterserver",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./app.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "~4.16.1",
+    "node-sass": "^9.0.0",
+    "node-sass-middleware": "^1.1.0",
+    "slugify": "^1.6.6",
+    "socket.io": "^4.7.2"
+  }
+}
