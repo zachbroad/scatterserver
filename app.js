@@ -1,14 +1,14 @@
-const express = require('express');
-const socketIO = require('socket.io');
-const http = require('http');
-const cors = require('cors');
+import express from 'express';
+import socketIO from 'socket.io';
+import http from 'http';
+import cors from 'cors';
 
-const Room = require("./room");
-const Client = require("./client");
+const Room = import("./room");
+const Client = import("./client");
 
-const state = require("./state");
-const registerRoomHandlers = require('./roomHandler');
-const registerGlobalHandlers = require('./globalHandler');
+const state = import("./state");
+const registerRoomHandlers = import('./roomHandler');
+const registerGlobalHandlers = import('./globalHandler');
 
 // Set up the server
 const app = express();
