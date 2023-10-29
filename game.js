@@ -1,7 +1,7 @@
 class Game {
   static ROUND_DURATION = 3;
   static LOBBY_DURATION = 3;
-  static RESULT_DURATION = 5000;
+  static RESULTS_DURATION = 5000;
   static WAIT_FOR_ANSWERS_DURATION = 2;
   static ROUNDS = 3;
 
@@ -41,6 +41,7 @@ class Game {
     this.roundDuration = Game.ROUND_DURATION;
     this.rounds = Game.ROUNDS;
     this.lobbyDuration = Game.LOBBY_DURATION; // just for showing countdown on client
+    this.resultsDuration = Game.RESULTS_DURATION;
     // this.score = {};
     this.currentRound = 1;
     this.cards = Game.generateCards();
@@ -77,4 +78,4 @@ class Game {
 
 }
 
-module.exports = Game;
+export default Game;

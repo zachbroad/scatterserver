@@ -1,10 +1,11 @@
-const state = require('./state');
+import state from './state.js';
 
-module.exports = (io, socket, client) => {
+
+export const registerGlobalHandlers = (io, socket, client) => {
   /**
    * Handle global chat message
    **/
-  const globalMessage = (msg) => {
+  const handleGlobalMessage = (msg) => {
     // Dont allow blank messages
     if (msg?.trim() === "" || !msg) {
       // send message err
@@ -17,5 +18,16 @@ module.exports = (io, socket, client) => {
     io.emit('global:message', msg);
   }
 
-  socket.on('global:message', globalMessage);
-}
+  // Handle disconnect
+  let handleUserDisconnect = () => {
+    console.log(`${client} has disconnected.`)
+
+    // Remove from rooms, send messages, etc
+    client.handleDisconnect();
+  };
+
+  socket.on('disconnect', handleUserDisconnect)
+  socket.on('global:message', handleGlobalMessage);
+};
+
+export default registerGlobalHandlers;

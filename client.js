@@ -1,4 +1,4 @@
-const Room = require("./room");
+import Room from './room.js';
 
 /**
  * Wrapper for client info...
@@ -64,4 +64,4 @@ class Client {
   }
 }
 
-module.exports = Client
+export default Client

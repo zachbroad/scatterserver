@@ -12,4 +12,4 @@ class ChatMessage {
   }
 }
 
-module.exports = ChatMessage
+export default ChatMessage;

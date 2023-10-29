@@ -1,4 +1,4 @@
-const GameStatus = Object.freeze({
+export const GameStatus = Object.freeze({
   Waiting: "Waiting",
   Starting: "Starting",
   InProgress: "In Progress",
@@ -7,4 +7,3 @@ const GameStatus = Object.freeze({
 });
 
 
-module.exports = {GameStatus}

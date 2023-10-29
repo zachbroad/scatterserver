@@ -1,6 +1,6 @@
-const slugify = require("slugify");
-const {GameStatus} = require("./util");
-const Game = require("./game");
+import slugify from 'slugify';
+import {GameStatus} from "./util.js";
+import Game from './game.js';
 
 class Room {
   static rooms = [
@@ -105,5 +105,4 @@ class Room {
 
 }
 
-
-module.exports = Room
+export default Room;

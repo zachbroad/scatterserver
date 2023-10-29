@@ -4,4 +4,4 @@ const state = {
   messages: []
 };
 
-module.exports = state;
+export default state;

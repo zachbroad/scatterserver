@@ -1,13 +1,12 @@
-const Room = require("./room");
-const Client = require('./client');
-const {GameStatus} = require("./util");
-const Game = require('./game');
+import Room from './room.js';
+import {GameStatus} from './util.js';
+import Game from './game.js';
 
-module.exports = (io, socket, client) => {
+export const registerRoomHandlers = (io, socket, client) => {
   /**
    * Handle user requesting to join room
    */
-  const join = (roomSlug) => {
+  const handleJoin = (roomSlug) => {
     let room = Room.getRoomBySlug(roomSlug)
     console.log(`${client} wants to join ${room}`)
 
@@ -34,7 +33,7 @@ module.exports = (io, socket, client) => {
   }
 
 
-  const create = (data) => {
+  const handleCreate = (data) => {
     // TODO: ADD ERR HANDLING
     const {name, capacity} = data;
 
@@ -63,7 +62,7 @@ module.exports = (io, socket, client) => {
    * Handle user wanting to create a room
    */
 
-  const message = (messageData) => {
+  const handleMessage = (messageData) => {
     // Log msg
     console.log('Got message.');
     console.dir(messageData);
@@ -81,7 +80,7 @@ module.exports = (io, socket, client) => {
   /**
    * User wants to start the game... handles all game logic
    */
-  const startGame = data => {
+  const handleStartGame = data => {
     const {slug} = data;
     console.log(`${client.username} requested to start ${slug}`)
 
@@ -126,7 +125,7 @@ module.exports = (io, socket, client) => {
             room.status = GameStatus.Waiting;
             room.reset();
             room.updateRoom(io);
-          }, 1000 * Game.RESULT_DURATION);
+          }, 1000 * Game.RESULTS_DURATION);
         }, 1000 * Game.WAIT_FOR_ANSWERS_DURATION);
       }, 1000 * Game.ROUND_DURATION);
     }, 1000 * Game.LOBBY_DURATION);
@@ -138,12 +137,8 @@ module.exports = (io, socket, client) => {
   };
 
 
-  const submitEntries = (data) => {
-  };
-
-
   // Data expected is an array of strings
-  const recvAnswers = (data) => {
+  const handleProvideAnswers = (data) => {
     /*
 
     client: {
@@ -166,12 +161,12 @@ module.exports = (io, socket, client) => {
   };
 
 
-  socket.on('room:create', create);
-  socket.on('room:data', sendUserDataOnReq);
-  socket.on('room:join', join);
-  socket.on('room:message', message);
-  socket.on('room:startGame', startGame);
-  socket.on('room:submitEntries', submitEntries);
-  socket.on('room:provideAnswers', recvAnswers);
+  socket.on('room:create', handleCreate); // client wants to create a new room
+  socket.on('room:data', sendUserDataOnReq); // client is requesting updated room info
+  socket.on('room:join', handleJoin); // client is requesting to join room
+  socket.on('room:message', handleMessage); // client is sending message to room
+  socket.on('room:startGame', handleStartGame); // client wants to start game
+  socket.on('room:provideAnswers', handleProvideAnswers); // get answers from client
+};
 
-}
+export default registerRoomHandlers;
