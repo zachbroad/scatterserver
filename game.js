@@ -1,8 +1,8 @@
 class Game {
-  static ROUND_DURATION = 3;
-  static LOBBY_DURATION = 3;
+  static ROUND_DURATION = 1;
+  static LOBBY_DURATION = 1;
   static RESULTS_DURATION = 5000;
-  static WAIT_FOR_ANSWERS_DURATION = 2;
+  static WAIT_FOR_ANSWERS_DURATION = 1;
   static ROUNDS = 3;
 
   static PROMPTS = [
@@ -37,7 +37,13 @@ class Game {
     return [this.PROMPTS, this.PROMPTS, this.PROMPTS];
   }
 
-  constructor(letter) {
+  // Return new Game with a random letter
+  static generateNewGame() {
+    const g =  new Game(String.fromCharCode(65+Math.floor(Math.random() * 26)));
+    return g;
+  }
+
+  constructor(letter='A') {
     this.roundDuration = Game.ROUND_DURATION;
     this.rounds = Game.ROUNDS;
     this.lobbyDuration = Game.LOBBY_DURATION; // just for showing countdown on client
@@ -47,6 +53,7 @@ class Game {
     this.cards = Game.generateCards();
     this.setPrompsToThisRound();
     this.results = {}
+    this.letter = letter;
   }
 
   scoreRounds(arrayOfUserAnswers) {

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -53,8 +54,6 @@ export const scoreGame = async (letter, prompts, answers) => {
     presence_penalty: 0,
   });
 
-  return JSON.parse(response.object);
+  return JSON.parse(response.choices[0].message.content);
 }
-
-console.log(scoreGame("A", "null", "null"))
 

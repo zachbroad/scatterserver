@@ -1,6 +1,7 @@
 import Room from './room.js';
 import {GameStatus} from './util.js';
 import Game from './game.js';
+import {scoreGame} from "./gpt.js";
 
 export const registerRoomHandlers = (io, socket, client) => {
   /**
@@ -111,8 +112,16 @@ export const registerRoomHandlers = (io, socket, client) => {
         // Score for 3 seconds to get answers
         room.requestAnswers(io);
 
-        // Show results after these 3 seconds
-        setTimeout(() => {
+        // We should have answers, now let's score them
+        setTimeout(async () => {
+
+          // Use GPT to score them
+
+          for (let v in room.game.results[client]) {
+            room.game.results[client].results = await scoreGame(room.game.letter, room.game.currentPrompts, room.game.results[client].answers);
+          }
+
+
           room.status = GameStatus.Results;
           room.updateRoom(io);
 
@@ -139,25 +148,11 @@ export const registerRoomHandlers = (io, socket, client) => {
 
   // Data expected is an array of strings
   const handleProvideAnswers = (data) => {
-    /*
-
-    client: {
-      answers
-    }
-
-    or
-    {
-      client,
-      answers
-    }
-     */
-
-    // client
-    //
-
-    const {slug, results} = data;
+    const {slug, answers} = data;
     const room = Room.getRoomBySlug(slug);
-    room.game.results[client] = data;
+    room.game.results[client] = {};
+    room.game.results[client].answers = answers;
+    room.game.results[client].results = [];
   };
 
 

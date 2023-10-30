@@ -17,6 +17,7 @@ class Room {
     this.players = [];
     this.chat = []; // array of messages
     this.reset();
+    this.currentRound = 1;
   }
 
   toString() {
@@ -25,7 +26,7 @@ class Room {
 
   // Set up fresh game
   reset() {
-    this.game = new Game();
+    this.game = Game.generateNewGame();
   }
 
   /**
