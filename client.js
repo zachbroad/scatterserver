@@ -52,12 +52,34 @@ class Client {
     return `${this.username} @ ${this.address}`;
   }
 
+  leaveRoom(room) {
+    if (room.hasClient(this)) {
+      room.removeClient(this);
+    } else {
+      console.log(`User tried to leave room ${room} but wasn't in that room!`);
+    }
+  }
+
+  /**
+   * Cleanup on client disconnect
+   *
+   * TODO: Handle dead client connection
+   */
   handleDisconnect() {
     console.log(`Handling ${this}'s disconnection`);
     let room = Room.getRoomBySlug(this.roomSlug);
+
     if (room) {
+      // Remove from room if they're in a room
       console.log(`${this} is in room ${room}, removing...`);
-      room.removePlayer(this);
+      room.removeClient(this);
+
+      // Is the room now empty? If so, let's delete it.
+      if (room.isEmpty()) {
+        console.log(`Room ${room.slug} is empty... destroying!`)
+        room.destroy();
+      }
+
     } else {
       console.log(`${this} is not in any rooms...`);
     }

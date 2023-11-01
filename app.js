@@ -9,6 +9,7 @@ import Client from './client.js';
 import state from './state.js';
 import registerRoomHandlers from './roomHandler.js';
 import registerGlobalHandlers from './globalHandler.js';
+import {APP_TITLE} from "./config.js";
 
 // Set up the server
 const app = express();
@@ -31,7 +32,7 @@ io.on('connection', (socket) => {
   console.log(`${client} has connected!`);
 
   // On join
-  io.emit('message', 'Welcome to the server');
+  io.emit('message', `Welcome to ${APP_TITLE}`);
   io.emit('global:messageHistory', state.messages);
   io.emit('global:roomList', Room.rooms);
 

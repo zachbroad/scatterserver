@@ -16,12 +16,16 @@ export const registerRoomHandlers = (io, socket, client) => {
       io.to(socket.id).emit('error', 'Room does not exist.')
     }
 
-    let [joined, message] = room.addPlayer(client);
+    let [joined, message] = room.addClient(client);
 
     if (joined) {
       // join the room by slug
       socket.join(room.slug);
 
+      // Set the player's score to 0
+      client.score = 0;
+
+      // Send update to whole room
       room.updateRoom(io);
 
       // send success
@@ -31,19 +35,39 @@ export const registerRoomHandlers = (io, socket, client) => {
       console.log(`${client} failed to join ${room} - ${message}.`)
       io.to(socket.id).emit('error', 'Room not joined.')
     }
-  }
+  };
 
 
-  const handleCreate = (data) => {
+
+  const handleCreate = (slug) => {
     // TODO: ADD ERR HANDLING
-    const {name, capacity} = data;
-
     // Create the room
-    let room = new Room(name, capacity);
+    if (!slug || slug.trim() === "") {
+      io.to(socket.id).emit('error', `You must provide a name for the room!`);
+      return;
+    }
+
+
+    // Make sure it doesn't already exist
+    if (Room.getRoomBySlug(slug)) {
+      console.log(`Room ${slug} already exists!`);
+      io.to(socket.id).emit('error', `Room ${slug} already exists!`)
+      return; // Cancel if already exists
+    }
+
+    let room = new Room(slug);
+    if (room) {
+      console.log(`Room ${slug} created by ${client}`);
+    } else {
+      io.to(socket.id).emit('error', `Error creating room ${slug}!`);
+      console.log(`Error creating room ${slug}`);
+      return;
+    }
+    // Add to room list
     Room.rooms = Room.rooms.concat(room);
 
     // Make the user joined the room
-    let [joined, message] = room.addPlayer(client);
+    let [joined, message] = room.addClient(client);
 
     if (joined) {
       // join the room by slug
@@ -51,18 +75,18 @@ export const registerRoomHandlers = (io, socket, client) => {
 
       // send success
       console.log(`${client} joined ${room}.`)
-      io.to(socket.id).emit('room_joined', room)
+      io.to(socket.id).emit('room:data', room)
       io.to(socket.id).emit('message', "Room created.")
     } else {
       // Failed to join room, send error msg
       console.log(`${client} failed to join ${room} - ${message}.`)
-      io.to(socket.id).emit('error', 'Room not joined.')
+      io.to(socket.id).emit('error', 'Room created but not joined.')
     }
   };
+
   /**
    * Handle user wanting to create a room
    */
-
   const handleMessage = (messageData) => {
     // Log msg
     console.log('Got message.');
@@ -117,8 +141,22 @@ export const registerRoomHandlers = (io, socket, client) => {
 
           // Use GPT to score them
 
+
+          let highScore = 0;
           for (let v in room.game.results[client]) {
+            room.clickedOkResults[client.id] = false;
             room.game.results[client].results = await scoreGame(room.game.letter, room.game.currentPrompts, room.game.results[client].answers);
+            room.game.results[client].score = room.game.results[client].results.reduce((a, b) => a + b, 0);
+
+            if (room.game.results[client].score > highScore) {
+              highScore = room.game.results[client].score;
+              room.game.winner = client;
+            }
+          }
+
+          // If everyone has 0, there's no winner so don't add for score
+          if (room.game.winner) {
+            room.scores[room.game.winner] += 1;
           }
 
 
@@ -155,6 +193,37 @@ export const registerRoomHandlers = (io, socket, client) => {
     room.game.results[client].results = [];
   };
 
+  const handleLeaveRoom = (data) => {
+    const {room: roomData} = data;
+    const room = Room.getRoomBySlug(roomData.slug);
+    if (!room) {
+      console.error(`${client} tried to leave room ${roomData.slug} but it doesn't exist!`)
+      return;
+    }
+
+    console.log(`${client} wants to leave room ${room.slug}`)
+    client.leaveRoom(Room.getRoomBySlug(room.slug));
+  };
+
+
+  const handleVoteGoToLobby = (data) => {
+    const {room: roomData} = data;
+    const room = Room.getRoomBySlug(roomData.slug);
+
+    if (!room) {
+      console.error(`${client} tried to go to lobby on room ${roomData.slug} but it doesn't exist anymore!`)
+      return;
+    }
+
+
+    room.clickedOkResults[client.id] = true;
+
+  };
+
+
+  const handleSinglePlayer = () => {
+
+  };
 
   socket.on('room:create', handleCreate); // client wants to create a new room
   socket.on('room:data', sendUserDataOnReq); // client is requesting updated room info
@@ -162,6 +231,9 @@ export const registerRoomHandlers = (io, socket, client) => {
   socket.on('room:message', handleMessage); // client is sending message to room
   socket.on('room:startGame', handleStartGame); // client wants to start game
   socket.on('room:provideAnswers', handleProvideAnswers); // get answers from client
+  socket.on('room:leaveRoom', handleLeaveRoom); // get answers from client
+  socket.on('room:voteGoToLobby', handleVoteGoToLobby); // get answers from client
+  socket.on('room:singlePlayer', handleSinglePlayer); // get answers from client
 };
 
 export default registerRoomHandlers;

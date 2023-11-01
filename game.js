@@ -1,40 +1,50 @@
+import fs from "fs";
+import shuffle from "lodash/shuffle.js";
+
 class Game {
-  static ROUND_DURATION = 1;
-  static LOBBY_DURATION = 1;
-  static RESULTS_DURATION = 5000;
+  static LOBBY_DURATION = 3;
+  static ROUND_DURATION = 45;
   static WAIT_FOR_ANSWERS_DURATION = 1;
+  static RESULTS_DURATION = 60;
   static ROUNDS = 3;
 
-  static PROMPTS = [
-    "Types of flowers",
-    "Capital cities",
-    "Famous authors",
-    "Items found in a toolbox",
-    "Cartoon characters",
-    "Car brands",
-    "Movie titles",
-    "Elements on the periodic table",
-    "Dog breeds",
-    "Things you find in a kitchen",
-    "Musical instruments",
-    "Olympic sports",
-    "Celestial bodies",
-    "Types of cheese",
-    "Breakfast foods",
-    "Fruits",
-    "World leaders",
-    "Names of rivers",
-    "Sea creatures",
-    "Universities or colleges"
-  ];
+  // static PROMPTS = [
+  //   "Types of flowers",
+  //   "Capital cities",
+  //   "Famous authors",
+  //   "Items found in a toolbox",
+  //   "Cartoon characters",
+  //   "Car brands",
+  //   "Movie titles",
+  //   "Elements on the periodic table",
+  //   "Dog breeds",
+  //   "Things you find in a kitchen",
+  //   "Musical instruments",
+  //   "Olympic sports",
+  //   "Celestial bodies",
+  //   "Types of cheese",
+  //   "Breakfast foods",
+  //   "Fruits",
+  //   "World leaders",
+  //   "Names of rivers",
+  //   "Sea creatures",
+  //   "Universities or colleges"
+  // ];
+
+  static generateRandomPrompts(count=20) {
+    let data = [];
+    const fileData = fs.readFileSync('prompts.txt', "utf8");
+    data = shuffle(fileData.split(/\n/)).slice(0, count);
+    return data;
+  }
 
   // TODO: randomly without duplicates for 3
   static generateCard() {
-    return this.PROMPTS;
+    return this.generateRandomPrompts();
   }
 
   static generateCards() {
-    return [this.PROMPTS, this.PROMPTS, this.PROMPTS];
+    return [this.generateCard(), this.generateCard(), this.generateCard()];
   }
 
   // Return new Game with a random letter
