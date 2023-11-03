@@ -75,14 +75,12 @@ Elements (Chemical)
 Emotions
 European Capitals
 Famous duos and trios
-Famous landmarks
 Famous Landmarks
 Famous People
 Farm Animals
 Fashion Brands
 Fast Food Items
 Festivals
-Fictional characters
 Fictional Characters
 Flowers
 Foods
@@ -99,9 +97,7 @@ Insects
 Islands
 Items in a Bathroom
 Items in a Doctor's Office
-Items in a grocery store
 Items in a Grocery Store
-Items in a kitchen
 Items in a Kitchen
 Items in a refrigerator
 Items in a suitcase
@@ -154,7 +150,7 @@ Superheroes
 Things at a Circus
 Things at a Funeral
 Things at a Wedding
-Things at a zoo
+Things at a Zoo
 Things Found in a Garage
 Things Found in a Garden
 Things Found in a Library
@@ -164,7 +160,7 @@ Things Found in Nature
 Things Found in Outer Space
 Things Found in the Ocean
 Things in a Bedroom
-Things in a circus
+Things in a Circus
 Things in a Classroom
 Things in a Desert
 Things in a Forest
@@ -178,11 +174,9 @@ Things in a Zoo
 Things in the Sky
 Things That Are Beautiful
 Things That Are Bitter
-Things that are black
 Things That Are Black
 Things That Are Blue
 Things That Are Brown
-Things That Are cold
 Things That Are Cold
 Things That Are Crescent-Shaped
 Things That Are Diamond-Shaped
@@ -211,7 +205,6 @@ Things That Are Prickly
 Things That Are Purple
 Things That Are Quiet
 Things That Are Rectangular
-Things that are red
 Things That Are Red
 Things that are round
 Things That Are Round
@@ -224,14 +217,12 @@ Things That Are Slippery
 Things That Are Sour
 Things That Are Spicy
 Things That Are Spiral-Shaped
-Things That Are square
 Things That Are Square
 Things That Are Star-Shaped
 Things That Are Sticky
 Things That Are Sweet
 Things That Are Triangular
 Things That Are Ugly
-Things That Are wet
 Things That Are Wet
 Things That Are White
 Things That Are Yellow

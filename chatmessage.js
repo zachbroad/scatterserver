@@ -1,8 +1,8 @@
 class ChatMessage {
   constructor(user, message) {
-    this.user = user
-    this.message = message
-    this.timestamp = new Date(Date.now()).getTime()
+    this.user = user;
+    this.message = message;
+    this.timestamp = new Date(Date.now()).getTime();
   }
 
   toJSON() {

@@ -1,4 +1,5 @@
-import Room from './room.js';
+import Room from "./room.js";
+import {io} from "./app.js";
 
 /**
  * Wrapper for client info...
@@ -8,10 +9,10 @@ class Client {
   static clients = [];
 
   constructor(socket, name = "no name", address) {
-    this.socket = socket
-    this.id = socket.id
-    this.username = name
-    this.address = address
+    this.socket = socket;
+    this.id = socket.id;
+    this.username = name;
+    this.address = address;
     this.roomSlug = null;
   }
 
@@ -21,7 +22,7 @@ class Client {
    */
   static addClient(socket) {
     let client = new Client(socket, socket.handshake.query.name, socket.handshake.address);
-    console.log(`Client created for ${socket.id}`)
+    console.log(`Client created for ${socket.id}`);
     Client.clients = Client.clients.concat(client);
     return client;
   }
@@ -52,6 +53,20 @@ class Client {
     return `${this.username} @ ${this.address}`;
   }
 
+  send(msg, data) {
+    io.to(this.socket.id).emit(msg, data);
+  }
+
+  message(msg) {
+    console.log(`[${this.toString()}]: ${msg}`);
+    io.to(this.socket.id).emit("message", msg);
+  }
+
+  error(msg) {
+    console.error(`[${this.toString()}]: ${msg}`);
+    io.to(this.socket.id).emit("error", msg);
+  }
+
   leaveRoom(room) {
     if (room.hasClient(this)) {
       room.removeClient(this);
@@ -76,7 +91,7 @@ class Client {
 
       // Is the room now empty? If so, let's delete it.
       if (room.isEmpty()) {
-        console.log(`Room ${room.slug} is empty... destroying!`)
+        console.log(`Room ${room.slug} is empty... destroying!`);
         room.destroy();
       }
 
@@ -84,6 +99,10 @@ class Client {
       console.log(`${this} is not in any rooms...`);
     }
   }
+
+  sendRooms() {
+    io.to(this.socket.id).emit("global:roomList", Room.rooms);
+  }
 }
 
-export default Client
+export default Client;
