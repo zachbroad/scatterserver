@@ -17,7 +17,7 @@ export const scoreGame = async (letter, prompts, answers) => {
             Your task is to verify whether the answers provided fit their corresponding prompts and start with the given letter.
             Return a JSON-serializable array of integers where each integer is either 0 or 1. A score of 0 means the answer doesn't fit the prompt and/or doesn't start with the given letter. A score of 1 means it does.
             Each score in the output array must correspond to the respective answer for each prompt in the input list. Ensure the indices match between the input prompts and output scores.
-
+            
             ## Inputs
             - **Letter**: The letter that each answer should start with. (e.g., 'A')
             - **Prompts**: A list of prompts for which the answers are provided. (e.g., ["Types of flowers", "Capital cities", ...])
@@ -29,6 +29,9 @@ export const scoreGame = async (letter, prompts, answers) => {
             ## Notes
             - An empty string as an answer should be scored as 0.
             - Ensure that each score in the output array corresponds to the correct prompt in the input array.
+            - A, An, and The cannot be used for key letters. For example: For the category “Name something that rumbles” if “T” is the key letter, “the lawnmower” is an unacceptable answer.
+            - You cannot use the same answer more than once in a game.
+            - If your answer is a person’s name, the first or last name can begin with the key letter. 
 
             ## Example
             Inputs:

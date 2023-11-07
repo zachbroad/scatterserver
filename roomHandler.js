@@ -16,7 +16,6 @@ export const registerRoomHandlers = (io, socket, client) => {
     }
 
     let [joined, message] = room.addClient(client, socket);
-
   };
 
 
@@ -113,11 +112,11 @@ export const registerRoomHandlers = (io, socket, client) => {
   const handleProvideAnswers = (data) => {
     const {slug, answers} = data;
     const room = Room.getRoomBySlug(slug);
-    console.log('got answers')
-    console.dir(client.id)
-    console.dir(data)
+    console.log("got answers");
+    console.dir(client.id);
+    console.dir(data);
     room.game.results[client.id] = {};
-    room.game.results[client.id].answers = answers
+    room.game.results[client.id].answers = answers;
     room.game.results[client.id].results = [];
   };
 

@@ -41,7 +41,10 @@ class Room {
   }
 
   static createSinglePlayerRoom(client) {
-    return new Room(client.username, 1, client, false);
+    const room = new Room(client.username, 1, client, false);
+    room.isPublic = false;
+    room.owner = client;
+    return room;
   }
 
   static addRoom(room) {
@@ -177,6 +180,12 @@ class Room {
       return [false, "Client is already in room"];
     }
 
+    // Make sure the room isn't full
+    if (this.isFull()) {
+      client.error("That room is full!");
+      return [false, "That room is full!"];
+    }
+
     !(client.id in this.scores) && (this.scores[client.id] = 0); // Set score to 0 if they haven't joined room before
     if (!client.id in this.scores) {
       this.scores[client.id] = 0;
@@ -243,6 +252,10 @@ class Room {
    */
   isEmpty() {
     return this.clients.length <= 0;
+  }
+
+  isFull() {
+    return this.clients.length >= this.capacity;
   }
 
 
