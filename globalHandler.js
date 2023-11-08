@@ -2,16 +2,21 @@ import state from "./state.js";
 
 
 export const registerGlobalHandlers = (io, socket, client) => {
-  /** Handle global chat message */
+
+  /**
+   * Handle global chat message
+   */
   const handleGlobalMessage = (msg) => {
-    if (msg?.trim() === "" || !msg) { // Dont allow blank messages
-      client.error(`Message can't be blank.`); // send message err
+    // Check for blank message
+    if (msg?.trim() === "" || !msg) {
+      client.error(`Message can't be blank.`); // send message err to client if blank
       return;
     }
 
-    msg = `${client.username}: ${msg}`;
-    state.messages = state.messages.concat(msg);
-    io.emit("global:message", msg);
+    console.log(`${client} sent message: ${msg}`); // Log message
+    msg = `${client.username}: ${msg}`; // Format message
+    state.messages = state.messages.concat(msg); // Store message in state
+    io.emit("global:message", msg); // Send message to all clients
   };
 
   // Handle disconnect
@@ -24,12 +29,20 @@ export const registerGlobalHandlers = (io, socket, client) => {
    * Send the client the list of rooms
    */
   const handleRoomList = () => {
-    client.sendRooms();
+    console.log(`${client} requested room list`);
+    client.sendListOfRooms();
   };
 
+  const handleNameChange = (data) => {
+    console.log(`${client} requested name change to ${data}`);
+    client.setUsername(data);
+  };
+
+  // Register handlers
   socket.on("disconnect", handleUserDisconnect);
   socket.on("global:message", handleGlobalMessage);
   socket.on("global:roomList", handleRoomList); // user is asking for rooms list
+  socket.on("global:changeName", handleNameChange);
 };
 
 export default registerGlobalHandlers;

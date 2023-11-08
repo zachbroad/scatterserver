@@ -15,6 +15,7 @@ class Game {
     this.currentRound = 1;
     this.cards = Game.generateCards();
     this.results = {};
+    this.hasBeenScored = false;
 
     this.setOfLetters = Game.DICE_LETTERS;
     this.letter = letter;
@@ -31,8 +32,8 @@ class Game {
   static LOBBY_DURATION = 3;
   static NUMBER_OF_ROUNDS = 3;
   static RESULTS_DURATION = 60;
-  static ROUND_DURATION = 90;
-  static WAIT_FOR_ANSWERS_DURATION = 4;
+  static ROUND_DURATION = 5;
+  static WAIT_FOR_ANSWERS_DURATION = 3;
 
   // Scattergories letters
   static DICE_LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "W"];
@@ -40,6 +41,11 @@ class Game {
   static ANY_LETTER = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
   static HARD_LETTERS = ["Q", "U", "V", "X", "Y", "Z", "J", "K", "W"];
 
+  /**
+   * Generate a list of random prompts from prompts.txt by reading the file and shuffling the lines
+   * @param count - number of prompts to generate
+   * @returns {string[][keyof string[]][]} - list of prompts
+   */
   static generateRandomPrompts(count = 20) {
     let data = [];
     const fileData = fs.readFileSync("prompts.txt", "utf8");
@@ -47,16 +53,26 @@ class Game {
     return data;
   }
 
-  // TODO: randomly without duplicates for 3
+  /**
+   * Generate a single card
+   * @returns {*[]} - a single card
+   */
   static generateCard() {
     return this.generateRandomPrompts();
   }
 
+  /**
+   * Generate 3 cards for a game
+   * @returns {*[][]} - 3 cards
+   */
   static generateCards() {
     return [this.generateCard(), this.generateCard(), this.generateCard()];
   }
 
-  // Return new Game with a random letter
+  /**
+   * Generate a new game with a random letter and prompts
+   * @returns {Game} - new game object
+   */
   static generateNewGame() {
     const g = new Game();
     g.setOfLetters = Game.DICE_LETTERS; // TODO get config
@@ -64,11 +80,17 @@ class Game {
     return g;
   }
 
-
+  /**
+   * Set the prompts to the current round card prompts
+   */
   setPromptsToThisRound() {
     this.currentPrompts = this.cards[this.currentRound];
   }
 
+  /**
+   * Get a random letter from the list of letters specified
+   * @returns {string} - random letter
+   */
   getLetterFromList() {
     return this.setOfLetters[Math.floor(Math.random() * this.setOfLetters.length)];
   }

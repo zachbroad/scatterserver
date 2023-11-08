@@ -9,12 +9,12 @@ import Client from "./client.js";
 import state from "./state.js";
 import registerRoomHandlers from "./roomHandler.js";
 import registerGlobalHandlers from "./globalHandler.js";
-import {APP_TITLE} from "./config.js";
+import {APP_TITLE, SERVER_PORT} from "./config.js";
 
 // Set up the server
 const app = express();
-app.use(cors({origin: "*"}));
-const httpServer = http.createServer(app);
+app.use(cors({origin: "*"})); // Enable CORS any origin
+const httpServer = http.createServer(app); // Create http server
 
 // Enable CORS any origin
 export const io = new Server(httpServer, {
@@ -33,8 +33,8 @@ io.on("connection", (socket) => {
 
   // On join
   io.emit("message", `Welcome to ${APP_TITLE}`);
-  io.emit("global:messageHistory", state.messages);
-  io.emit("global:roomList", Room.rooms);
+  client.sendMessageHistory();
+  client.sendListOfRooms();
 
   // Register handlers
   registerRoomHandlers(io, socket, client);
@@ -42,6 +42,6 @@ io.on("connection", (socket) => {
 });
 
 // Start the server
-httpServer.listen(3000, () => {
-  console.log("Server running on port 3000");
+httpServer.listen(SERVER_PORT, () => {
+  console.log(`Server running on port ${SERVER_PORT}`);
 });

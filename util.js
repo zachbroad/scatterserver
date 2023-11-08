@@ -1,3 +1,5 @@
+// Description: Utility functions
+
 export const GameStatus = Object.freeze({
   Waiting: "Waiting",
   Starting: "Starting",

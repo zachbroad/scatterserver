@@ -5,8 +5,7 @@ import {io} from "./app.js";
 import {scoreGame} from "./gpt.js";
 
 class Room {
-  static rooms = [];
-
+  // TODO: Add room owner
   constructor(name, capacity = 10, owner = null, isPublic = true) {
     this.name = name;
     this.slug = slugify(this.name, {lower: true});
@@ -21,6 +20,12 @@ class Room {
     this.isPublic = isPublic;
     this.currentRound = 1;
     this.owner = null; // the client that created the room
+  }
+
+  static rooms = [];
+
+  static getPublicRooms() {
+    return Room.rooms.filter(r => r.isPublic);
   }
 
   /**
@@ -48,9 +53,16 @@ class Room {
   }
 
   static addRoom(room) {
+    // Make sure room is not null
     if (!room) {
       console.error("Error: Room is null!");
       return;
+    }
+
+    // Make sure it doesn't already exist
+    if (Room.getRoomBySlug(room.slug)) {
+      console.error(`Room ${room.slug} already exists!`);
+      return; // Cancel if already exists
     }
 
     Room.rooms = Room.rooms.concat(room);
@@ -60,7 +72,7 @@ class Room {
     return `${this.slug} - (${this.clients.length} / ${this.capacity})`;
   }
 
-  // Set up fresh game
+  // Set up fresh game with new prompts, letter, etc.
   setUpNewGame() {
     this.game = Game.generateNewGame();
     this.status = GameStatus.Waiting;
@@ -76,96 +88,92 @@ class Room {
 
     // Start game
     setTimeout(() => {
-      console.log(`${this.slug} is starting...`);
-
-      this.status = GameStatus.InProgress;
-      this.updateRoom();
+      this.handleSetInProgress();
 
       // timeout for game is done
       setTimeout(() => {
-        // Game is done, set status to scoring & get answers
-        this.status = GameStatus.Scoring;
-        this.updateRoom();
-        this.requestAnswers(io);
+        this.handleRequestAnswersAndPassToGPT();
 
-        // TODO: Track if we get everyone's answers earlier
-
-        // We should have answers, now let's score them
         setTimeout(async () => {
-          // Start all the score calculations concurrently and wait for them to finish
-          const scoreCalculations = await Promise.all(
-            this.clients.map(client =>
-              scoreGame(this.game.letter, this.game.currentPrompts, this.game.results[client.id].answers)
-            )
-          );
-
-          // Process the results after all calculations have completed
-          let highScore = 0;
-
-          scoreCalculations.forEach((scoredAnswers, index) => {
-            const client = this.clients[index];
-            const score = scoredAnswers.reduce((a, b) => a + b, 0);
-
-            this.clickedOkResults[client.id] = false;
-            this.game.results[client.id].results = scoredAnswers;
-            this.game.results[client.id].score = score;
-
-            if (score > highScore) {
-              highScore = score;
-              this.game.winner = client;
-            }
-          });
-
-
-          // for (let client of this.clients) {
-          //   this.clickedOkResults[client.id] = false;
-          //
-          //   let scoredAnswers = await scoreGame(this.game.letter, this.game.currentPrompts, this.game.results[client.id].answers);
-          //   this.game.results[client.id].results = scoredAnswers;
-          //
-          //   let score = this.game.results[client.id].results.reduce((a, b) => a + b, 0);
-          //   this.game.results[client.id].score = score;
-          //
-          //   if (score > highScore) {
-          //     highScore = score;
-          //     this.game.winner = client;
-          //   }
-          // }
-          //
-          // for (let v in this.game.results[client]) {
-          //   this.clickedOkResults[client.id] = false;
-          //   this.game.results[client].results = await scoreGame(this.game.letter, this.game.currentPrompts, this.game.results[client].answers);
-          //   this.game.results[client].score = this.game.results[client].results.reduce((a, b) => a + b, 0);
-          //
-          //   if (this.game.results[client].score > highScore) {
-          //     highScore = this.game.results[client].score;
-          //     this.game.winner = client;
-          //   }
-          // }
-
-          // If everyone has 0, there's no winner so don't add for score
-          if (this.game.winner) {
-            this.scores[this.game.winner.id] += 1;
+          // only score if we haven't already
+          if (!this.game.hasBeenScored) {
+            this.handleScoring();
           }
-
-          this.status = GameStatus.Results;
-          this.updateRoom();
-
-          // Send results
-          io.to(this.slug).emit("room:results", this.game.results);
-
-          // Wait for RESULTS_DURATION seconds then restart the game TODO: multiple rounds
-          setTimeout(() => {
-            // Set to new round
-            this.status = GameStatus.Waiting;
-            this.setUpNewGame();
-            this.updateRoom();
-          }, 1000 * Game.RESULTS_DURATION);
         }, 1000 * Game.WAIT_FOR_ANSWERS_DURATION);
-      }, 1000 * Game.ROUND_DURATION);
-    }, 1000 * Game.LOBBY_DURATION);
 
+      }, 1000 * Game.ROUND_DURATION);
+
+    }, 1000 * Game.LOBBY_DURATION);
   }
+
+  handleSetInProgress() {
+    console.log(`${this.slug} is starting...`);
+
+    this.status = GameStatus.InProgress;
+    this.updateRoom();
+  }
+
+  handleRequestAnswersAndPassToGPT() {
+    console.log(`${this.slug} is requesting answers...`);
+
+    this.status = GameStatus.Scoring;
+    this.updateRoom();
+    this.requestAnswers(io);
+  }
+
+  async handleScoring() {
+    console.log(`${this.slug} is scoring...`);
+
+    this.game.hasBeenScored = true;
+
+    // Start all the score calculations concurrently and wait for them to finish
+    const scoreCalculations = await Promise.all(this.clients.map(client => scoreGame(this.game.letter, this.game.currentPrompts, this.game.results[client.id].answers)));
+
+    // Process the results after all calculations have completed
+    let highScore = 0;
+
+    // Loop through each client's answers
+    scoreCalculations.forEach((scoredAnswers, index) => {
+      const client = this.clients[index];
+      const score = scoredAnswers.reduce((a, b) => a + b, 0);
+
+      this.clickedOkResults[client.id] = false;
+      this.game.results[client.id].results = scoredAnswers;
+      this.game.results[client.id].score = score;
+
+      if (score > highScore) {
+        highScore = score;
+        this.game.winner = client;
+      }
+    });
+
+    // If everyone has 0, there's no winner so don't add for score
+    if (this.game.winner) {
+      this.scores[this.game.winner.id] += 1;
+    }
+
+    // Set room status to results
+    this.status = GameStatus.Results;
+    this.updateRoom();
+
+    // Send results
+    io.to(this.slug).emit("room:results", this.game.results);
+
+    // Show the results for a bit before returning to the lobby
+    setTimeout(() => {
+      // Set to new round
+      this.status = GameStatus.Waiting;
+      this.setUpNewGame();
+      this.updateRoom();
+    }, 1000 * Game.RESULTS_DURATION);
+  }
+
+  // waitforanswers() {
+  //   this.status = GameStatus.Waiting;
+  //   this.updateRoom();
+  //   this.requestAnswers(io);
+  // }
+
 
   /**
    * Add client to this.players
@@ -208,6 +216,7 @@ class Room {
    * @returns {[boolean, string]} returns true if player was removed, false if not
    */
   removeClient(client) {
+    // Make sure the player is in the room
     if (!this.hasClient(client)) {
       let errorMessage = `${client} is not in room ${this.slug}`;
       console.error(errorMessage);
@@ -218,13 +227,20 @@ class Room {
     this.clients = this.clients.filter(p => p.socket.id !== client.socket.id);
     console.log(`${client} removed from ${this}`);
     console.dir(this.clients);
+
+
+    // If the room is empty, delete it
+    if (this.isEmpty()) {
+      console.log(`${this} is empty, deleting...`);
+      this.destroy();
+    }
+
     return [true, null];
   }
 
   hasClient(client) {
     return this.clients.includes(client);
   }
-
 
   /** Sends updated data to all connected clients */
   updateRoom() {
@@ -258,6 +274,13 @@ class Room {
     return this.clients.length >= this.capacity;
   }
 
+  /**
+   * Returns true if everyone has submitted answers
+   * @returns {boolean} - true if everyone has submitted answers, false otherwise
+   */
+  hasEveryoneSubmittedAnswers() {
+    return Object.keys(this.game.results).length === this.clients.length;
+  }
 
 }
 
