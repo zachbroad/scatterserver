@@ -27,12 +27,15 @@ export const io = new Server(httpServer, {
 
 // Handle socketio events
 io.on("connection", (socket) => {
+  // Log connection
   console.log(`Connection from ${socket.handshake.address}!`);
+  
+  // Add client
   const client = Client.addClient(socket);
   console.log(`${client} has connected!`);
 
   // On join
-  io.emit("message", `Welcome to ${APP_TITLE}`);
+  client.message(`Welcome to ${APP_TITLE}!`);
   client.sendMessageHistory();
   client.sendListOfRooms();
 

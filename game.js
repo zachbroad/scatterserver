@@ -32,8 +32,8 @@ class Game {
   static LOBBY_DURATION = 3;
   static NUMBER_OF_ROUNDS = 3;
   static RESULTS_DURATION = 60;
-  static ROUND_DURATION = 5;
-  static WAIT_FOR_ANSWERS_DURATION = 3;
+  static ROUND_DURATION = 90;
+  static WAIT_FOR_ANSWERS_DURATION = 3.5;
 
   // Scattergories letters
   static DICE_LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "W"];

@@ -49,6 +49,7 @@ class Room {
     const room = new Room(client.username, 1, client, false);
     room.isPublic = false;
     room.owner = client;
+    room.startGame();
     return room;
   }
 
