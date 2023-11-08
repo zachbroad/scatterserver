@@ -1,7 +1,4 @@
 import Room from "./room.js";
-import {GameStatus} from "./util.js";
-import Game from "./game.js";
-import {scoreGame} from "./gpt.js";
 
 export const registerRoomHandlers = (io, socket, client) => {
   /** Handle user requesting to join room */
@@ -13,7 +10,22 @@ export const registerRoomHandlers = (io, socket, client) => {
       client.error("You tried to join a room that does not exist!");
     }
 
-    let [joined, message] = room.addClient(client, socket);
+    let [joined, message] = room.addClient(client);
+
+    // if joined, send join message to all clients in room
+    if (joined) {
+      // join the room by slug
+      socket.join(room.slug);
+
+      // send success
+      console.log(`${client} joined ${room}.`);
+      client.send("room:data", room);
+      client.message(`You joined ${room.name}.`);
+    } else {
+      // Failed to join room, send error msg
+      console.log(`${client} failed to join ${room} - ${message}.`);
+      client.error(message);
+    }
   };
 
 
@@ -21,14 +33,14 @@ export const registerRoomHandlers = (io, socket, client) => {
    * Handle user wanting to create a room
    * @param slug - the name of the room
    */
-  const handleCreate = (slug) => {
+  const handleCreateRoom = (slug) => {
     // TODO: ADD ERR HANDLING
-    // Create the room
+
+    // Make sure they provided a name
     if (!slug || slug.trim() === "") {
       io.to(socket.id).emit("error", `You must provide a name for the room!`);
       return;
     }
-
 
     // Make sure it doesn't already exist
     if (Room.getRoomBySlug(slug)) {
@@ -36,30 +48,30 @@ export const registerRoomHandlers = (io, socket, client) => {
       return; // Cancel if already exists
     }
 
+    // Create room
     let room = new Room(slug);
-    if (room) {
-      console.log(`Room ${slug} created by ${client}`);
-    } else {
+    if (!room) {
       client.error(`Error creating room ${slug}!`);
       return;
     }
 
-    // Add to room list
-    Room.rooms = Room.rooms.concat(room);
+    room.setOwner(client);
+    client.message(`Room ${slug} created!`);
+    Room.rooms = Room.rooms.concat(room); // Add to room list
 
     // Make the user joined the room
-    let [joined, message] = room.addClient(client, socket);
+    let [joined, message] = room.addClient(client);
 
     if (joined) {// join the room by slug
+      // join the room by slug
       socket.join(room.slug);
 
       // send success msg to client
       console.log(`${client} joined ${room}.`);
       client.send("room:data", room);
-      client.message("Room created.");
     } else {// Failed to join room, send error msg
       console.log(`${client} failed to join ${room} - ${message}.`);
-      io.to(socket.id).emit("error", "Room created but not joined.");
+      client.error("Room created but not joined.");
     }
   };
 
@@ -67,16 +79,27 @@ export const registerRoomHandlers = (io, socket, client) => {
    * Handles a message from a client in a room
    * @param messageData - the message data from the client
    */
-  const handleMessage = (messageData) => {
+  const handleChatMessageFromClient = (messageData) => {
     // Log msg
     console.log(`Got message from ${client}.`);
     console.dir(messageData);
 
-    // TODO FIX THIS DONE USE DEFAULT FIND BETTER WAY TO SEND MSG
-    let fmtMsg = `${client.username}: ${messageData.message}`;
+    // make an object with the message data
+    let message = {
+      username: client.username,
+      message: messageData.message,
+      timestamp: new Date().toLocaleTimeString(),
+    };
 
+    // get the room
     let roomSlug = messageData.room;
     const room = Room.getRoomBySlug(roomSlug);
+
+    // make sure user is in that room
+    if (!room || !room.hasClient(client)) {
+      console.error(`${client} tried to send message to room ${roomSlug} but they're not in that room!`);
+      return;
+    }
 
     // Make sure room exists before sending msg
     if (!room) {
@@ -84,10 +107,10 @@ export const registerRoomHandlers = (io, socket, client) => {
     }
 
     // Store msg in state
-    room.chat = room.chat.concat(fmtMsg);
+    room.chat = room.chat.concat(message);
 
     // Send msg out to everyone connected
-    io.sockets.in(roomSlug).emit("room:message", fmtMsg);
+    io.sockets.in(roomSlug).emit("room:chatMessage", message);
   };
 
 
@@ -95,7 +118,7 @@ export const registerRoomHandlers = (io, socket, client) => {
    * Handles a request to start a game from a client in a room (TODO: only the host can do this)
    * @param data - the data from the client (should be the room slug)
    */
-  const handleStartGame = data => {
+  const handleStartGameRequestFromClient = data => {
     const {slug} = data; // Get room slug from data
     const room = Room.getRoomBySlug(slug); // Get room by slug
     console.log(`${client.username} requested to start ${slug}`);
@@ -122,7 +145,7 @@ export const registerRoomHandlers = (io, socket, client) => {
    * Handles a client sending their answers to the server
    * @param data - the data from the client
    */
-  const handleClientProvidingAnswers = (data) => {
+  const handleClientProvidingAnswers = async (data) => {
     const {slug, answers} = data;
     const room = Room.getRoomBySlug(slug);
 
@@ -159,14 +182,14 @@ export const registerRoomHandlers = (io, socket, client) => {
       // Everyone is done, score the game
       console.log("Everyone is done, scoring game...");
 
-      room.handleScoring();
+      await room.handleScoring();
     } else {
       // Not everyone is done, update room
       room.updateRoom();
     }
   };
 
-  const handleLeaveRoom = (data) => {
+  const handleClientLeavingRoom = (data) => {
     const {room: roomData} = data;
     const room = Room.getRoomBySlug(roomData.slug);
 
@@ -211,11 +234,11 @@ export const registerRoomHandlers = (io, socket, client) => {
 
 
   /** Handles a client requesting to start a single player game */
-  const handleSinglePlayer = () => {
+  const handleSinglePlayerRequest = () => {
     console.log(`${client} wants to start a single player game.`);
     const room = Room.createSinglePlayerRoom(client);
-    room.name = 'Single Player Room';
-    room.slug = 'single-player';
+    room.name = "Single Player Room";
+    room.slug = "single-player";
 
     // add random number to name but make sure unique
     while (Room.getRoomBySlug(room.slug)) {
@@ -227,7 +250,7 @@ export const registerRoomHandlers = (io, socket, client) => {
     Room.addRoom(room);
 
     // TODO: DRY this
-    let [joined, message] = room.addClient(client, socket);
+    let [joined, message] = room.addClient(client);
 
     if (joined) {
       // join the room by slug
@@ -259,7 +282,7 @@ export const registerRoomHandlers = (io, socket, client) => {
     const room = Room.rooms[Math.floor(Math.random() * Room.rooms.length)];
 
     // Try to join the room
-    let [joined, message] = room.addClient(client, socket);
+    let [joined, message] = room.addClient(client);
 
     // Send success or error
     if (joined) {
@@ -278,15 +301,15 @@ export const registerRoomHandlers = (io, socket, client) => {
   };
 
   // Register room handlers for Socket.IO events
-  socket.on("room:create", handleCreate); // client wants to create a new room
+  socket.on("room:create", handleCreateRoom); // client wants to create a new room
   socket.on("room:data", sendUserDataOnReq); // client is requesting updated room info
   socket.on("room:join", handleJoin); // client is requesting to join room
-  socket.on("room:message", handleMessage); // client is sending message to room
-  socket.on("room:startGame", handleStartGame); // client wants to start game
+  socket.on("room:chatMessage", handleChatMessageFromClient); // client is sending message to room
+  socket.on("room:startGame", handleStartGameRequestFromClient); // client wants to start game
   socket.on("room:provideAnswers", handleClientProvidingAnswers); // client is giving us their answers
-  socket.on("room:leave", handleLeaveRoom); // client is leaving room
+  socket.on("room:leave", handleClientLeavingRoom); // client is leaving room
   socket.on("room:voteGoToLobby", handleVoteGoToLobby); // client is voting to return to lobby @ results screen
-  socket.on("room:singlePlayer", handleSinglePlayer); // start single player room
+  socket.on("room:singlePlayer", handleSinglePlayerRequest); // start single player room
   socket.on("room:joinRandomRoom", handleJoinRandomRoom);
 };
 

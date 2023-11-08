@@ -16,8 +16,11 @@ const app = express();
 app.use(cors({origin: "*"})); // Enable CORS any origin
 const httpServer = http.createServer(app); // Create http server
 
-// Enable CORS any origin
 export const io = new Server(httpServer, {
+  // ping
+  pingInterval: 60000, // ping every 60 seconds
+  pingTimeout: 5000, // if no pong received after 5 seconds, consider connection lost
+
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
@@ -29,7 +32,7 @@ export const io = new Server(httpServer, {
 io.on("connection", (socket) => {
   // Log connection
   console.log(`Connection from ${socket.handshake.address}!`);
-  
+
   // Add client
   const client = Client.addClient(socket);
   console.log(`${client} has connected!`);

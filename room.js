@@ -101,9 +101,7 @@ class Room {
             this.handleScoring();
           }
         }, 1000 * Game.WAIT_FOR_ANSWERS_DURATION);
-
       }, 1000 * Game.ROUND_DURATION);
-
     }, 1000 * Game.LOBBY_DURATION);
   }
 
@@ -203,9 +201,11 @@ class Room {
     client.roomSlug = this.slug; // Set cur room slug
     client.socket.join(this.slug);// Join the socket chan
 
-    this.clients = this.clients.concat(client);
+    this.clients = this.clients.concat(client); // Add player to room
+    client.message(`You joined ${this.name}`); // send success message to client
 
-    client.message(`You joined ${this.name}`); // send success
+    // send join message to all clients
+    this.sendToAllClients("room:join", client);
     this.updateRoom();
 
     return [true, null];
@@ -234,7 +234,17 @@ class Room {
     if (this.isEmpty()) {
       console.log(`${this} is empty, deleting...`);
       this.destroy();
+      return [true, null];
     }
+
+    // if the owner left, set a new owner
+    if (this.owner === client) {
+      this.setOwner(this.clients[0]); // set the new owner to the first client in the room
+      this.clients[0].message(`You are now the owner of ${this.name}.`); // let the new owner know they're the owner
+    }
+
+    // send leave message to all clients
+    this.sendToAllClients("alert", `${client.username} left the room.`);
 
     return [true, null];
   }
@@ -248,6 +258,23 @@ class Room {
     io.to(this.slug).emit("room:data", this);
   }
 
+  /**
+   * Sends a message to all clients in the room
+   * @param msg - the message to send
+   * @param data - the data to send
+   */
+  sendToAllClients(msg, data) {
+    io.to(this.slug).emit(msg, data);
+  }
+
+  /**
+   * alert to all clients
+   * @param msg - the message to send
+   */
+  alertToAllClients(msg) {
+    io.to(this.slug).emit("room:alert", msg);
+  }
+
   /** Removes all players from the room and deletes from Room.rooms */
   destroy() {
     // TODO: Remove all players
@@ -259,6 +286,10 @@ class Room {
     io.to(this.slug).emit("room:requestAnswers");
   }
 
+  /**
+   * Checks whether all players are ready to go to the lobby
+   * @returns {boolean} - true if everyone is ready to go to the lobby, false otherwise
+   */
   isEveryoneReadyToGoToLobby() {
     return Object.values(this.clickedOkResults).every(val => val === true);
   }
@@ -271,6 +302,10 @@ class Room {
     return this.clients.length <= 0;
   }
 
+  /**
+   * Checks whether the room is full or not
+   * @returns {boolean} whether or not the room is full
+   */
   isFull() {
     return this.clients.length >= this.capacity;
   }
@@ -281,6 +316,14 @@ class Room {
    */
   hasEveryoneSubmittedAnswers() {
     return Object.keys(this.game.results).length === this.clients.length;
+  }
+
+  /**
+   * setOwner - sets the owner of the room
+   */
+  setOwner(client) {
+    this.alertToAllClients(`${client.username} is now the owner of the room.`);
+    this.owner = client;
   }
 
 }
