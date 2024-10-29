@@ -2,6 +2,8 @@
 
 This is the backend server component for Categories.LIVE, a real-time multiplayer word game inspired by Scattergories. The server handles game logic, room management, and real-time communication between players.
 
+![Scattergories Gameplay](https://github.com/user-attachments/assets/8baba918-3850-4fd7-bc06-d025b6fbbbcb)
+
 ## Server Architecture
 
 ### Core Components
